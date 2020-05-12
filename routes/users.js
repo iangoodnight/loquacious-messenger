@@ -85,6 +85,12 @@ router.post('/data', async function(req, res) {
 							   	   '<span class="c-sb-list-item__text">' + date_added + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
+							   '<li class="c-sb-list-item">' +
+							   	 '<span class="c-sb-list-item__label">' +
+							   	   'Customer profile' +
+							   	   '<span class="c-sb-list-item__text"><a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + response[0].profile.login + '</span>' +
+							   	 '</span>' +
+							   '</li>' +
 							 '</ul>';
 
 		let helpScoutResponse = { html: ""};
@@ -107,7 +113,7 @@ function timeConverter(UNIX_timestamp){
   let hour = a.getHours();
   let min = a.getMinutes();
   let sec = a.getSeconds();
-  let time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+  let time = month + ' ' + date + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
   return time;
 }
 
