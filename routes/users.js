@@ -54,7 +54,7 @@ router.post('/data', async function(req, res) {
 							break;
 						case 'order':
 							console.log('case: order');
-							data.orders = v.value.data[0];
+							data.orders = v.value.data;
 							break;
 						default:
 							break;
@@ -76,6 +76,14 @@ router.post('/data', async function(req, res) {
 		});
 
 		let date_added = timeConverter(response[0].profile.added);
+		let totals = response[1].orders;
+		let numberOrders = response[1].orders.length;
+		function totalSpent(totals) {
+			let total = 0;
+			totals.forEach(order => {total += order.subtotal});
+			return Math.round(total);
+		};
+		let grandTotal = totalSpent(totals);
 
 		let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
 							 '<ul class="c-sb-list c-sb-list--two-line">' +
@@ -89,6 +97,18 @@ router.post('/data', async function(req, res) {
 							   	 '<span class="c-sb-list-item__label">' +
 							   	   'Customer profile' +
 							   	   '<span class="c-sb-list-item__text"><a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + response[0].profile.login + '</span>' +
+							   	 '</span>' +
+							   '</li>' +
+							   '<li class="c-sb-list-item">' +
+							   	 '<span class="c-sb-list-item__label">' +
+							   	   'Orders with Boutsy' +
+							   	   '<span class="c-sb-list-item__text">' + numberOrders + '</span>' +
+							   	 '</span>' +
+							   '</li>' +
+							   '<li class="c-sb-list-item">' +
+							   	 '<span class="c-sb-list-item__label">' +
+							   	   'Dollars spent' +
+							   	   '<span class="c-sb-list-item__text">$' + grandTotal + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
 							 '</ul>';
