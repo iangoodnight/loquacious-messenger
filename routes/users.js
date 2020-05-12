@@ -101,13 +101,13 @@ router.post('/data', async function(req, res) {
 							   '</li>' +
 							   '<li class="c-sb-list-item">' +
 							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Orders with Boutsy' +
+							   	   'Orders with Boutsy (as customer)' +
 							   	   '<span class="c-sb-list-item__text">' + numberOrders + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
 							   '<li class="c-sb-list-item">' +
 							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Dollars spent' +
+							   	   'Dollars spent (as customer)' +
 							   	   '<span class="c-sb-list-item__text">$' + grandTotal + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
