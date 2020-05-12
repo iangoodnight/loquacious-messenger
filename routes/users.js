@@ -111,6 +111,12 @@ router.post('/data', async function(req, res) {
 							   	   '<span class="c-sb-list-item__text">$' + grandTotal + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
+							   '<li class="c-sb-list-item">' +
+							   	 '<span class="c-sb-list-item__label">' +
+							   	   'Also, here is a drawing of a cloud' +
+							   	   '<span class="c-sb-list-item__text"><i class="icon-cloud"></i></span>' +
+							   	 '</span>' +
+							   '</li>' +
 							 '</ul>';
 
 		let helpScoutResponse = { html: ""};
