@@ -89,7 +89,7 @@ router.post('/data', async function(req, res) {
 
 		let escaped = JSON.stringify(html);
 
-		helpScoutResponse.html = escaped;
+		helpScoutResponse.html = html;
 
 	res.send(helpScoutResponse);
 	res.end();
