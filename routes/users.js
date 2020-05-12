@@ -29,29 +29,69 @@ router.get('/:email', function(req, res, next) {
 
 });
 
-router.post('/data', function(req, res) {
-	console.log(req.body);
+router.post('/data', async function(req, res) {
+	// console.log(req.body);
+	console.log(req);
 	let email = req.body.customer.email;
 
 	let profile = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile&_cnd[login]=" + email);
 	let orders = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=order&_cnd[email]=" + email); 
-
-	Promise.allSettled([profile, orders])
+	
+	let response = await Promise.allSettled([profile, orders])
 		.then((values) => {
+
 			let results = values.map(v => {
+				let data = {};
 				if(v.status === 'fulfilled') {
-					return `FULFILLED: ${JSON.stringify(v.value.data[0])} --> ${v.value.data[0].taxId}`;
+
+					let target = v.value.config.url.split('&_path=')[1].split('&_cnd')[0];
+					console.log(v.value.data[0]);
+					console.log('target: ', target);
+					switch (target) {
+						case 'profile':
+							console.log('case: profile');
+							data.profile = v.value.data[0];
+							break;
+						case 'order':
+							console.log('case: order');
+							data.orders = v.value.data[0];
+							break;
+						default:
+							break;
+					};
+					return data;	
 				}
 
 				return `REJECTED: ${v.reason.message}`;
 			});
-
-			console.log(results);
+			return results;
+		})
+		.then(results => {
+			console.log("Results: ", results);
+			// res.send(results);
+			return results;
 		})
 		.catch(reasons => {
 			console.log(reasons);
-		})
+		});
 
+		let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
+							 '<ul class="c-sb-list c-sb-list--two-line">' +
+							   '<li class="c-sb-list-item">' +
+							   	 '<span class="c-sb-list-item__label">' +
+							   	   'Customer since' +
+							   	   '<span class="c-sb-list-item__text">' + response[0].profile.added + '</span>' +
+							   	 '</span>' +
+							   '</li>' +
+							 '</ul>';
+
+		let helpScoutResponse = { html: ""};
+
+		let escaped = JSON.stringify(html);
+
+		helpScoutResponse.html = escaped;
+
+	res.send(helpScoutResponse);
 	res.end();
 })
 
