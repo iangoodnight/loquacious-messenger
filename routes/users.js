@@ -75,12 +75,14 @@ router.post('/data', async function(req, res) {
 			console.log(reasons);
 		});
 
+		let date_added = timeConverter(response[0].profile.added);
+
 		let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
 							 '<ul class="c-sb-list c-sb-list--two-line">' +
 							   '<li class="c-sb-list-item">' +
 							   	 '<span class="c-sb-list-item__label">' +
 							   	   'Customer since' +
-							   	   '<span class="c-sb-list-item__text">' + response[0].profile.added + '</span>' +
+							   	   '<span class="c-sb-list-item__text">' + date_added + '</span>' +
 							   	 '</span>' +
 							   '</li>' +
 							 '</ul>';
@@ -94,6 +96,20 @@ router.post('/data', async function(req, res) {
 	res.send(helpScoutResponse);
 	res.end();
 })
+
+
+function timeConverter(UNIX_timestamp){
+  let a = new Date(UNIX_timestamp * 1000);
+  let months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let year = a.getFullYear();
+  let month = months[a.getMonth()];
+  let date = a.getDate();
+  let hour = a.getHours();
+  let min = a.getMinutes();
+  let sec = a.getSeconds();
+  let time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+  return time;
+}
 
 
 module.exports = router;
