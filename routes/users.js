@@ -36,7 +36,7 @@ router.post('/data', async function(req, res) {
 
 	let profile = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile&_cnd[login]=" + email);
 	let orders = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=order&_cnd[email]=" + email); 
-	
+
 	let response = await Promise.allSettled([profile, orders])
 		.then((values) => {
 
@@ -73,9 +73,15 @@ router.post('/data', async function(req, res) {
 		})
 		.catch(reasons => {
 			console.log(reasons);
-		});
+		}
+	);
 
-		let date_added = timeConverter(response[0].profile.added);
+	let date_added = timeConverter(response[0].profile.added);
+
+	if (response[0].profile.access_level !== 100) {
+
+		console.log(response[1].orders[0]);
+		console.log(response[1].orders[6]);
 		let totals = response[1].orders;
 		let numberOrders = response[1].orders.length;
 		function totalSpent(totals) {
@@ -84,48 +90,85 @@ router.post('/data', async function(req, res) {
 			return Math.round(total);
 		};
 		let grandTotal = totalSpent(totals);
+		let subOrders;
+		numberOrders > 10 ? subOrders = 10: subOrders = numberOrders;
+
+		function listOrders(orders) {
+			let counter = 0;
+			let list = '';
+			for (var i = orders.length - 1; i >= 0; i--) {
+				let purchaseDate = timeConverter(orders[i].date);
+				let purchaseTotal = Math.round(orders[i].total);
+				let orderURL = 'https://boutsy.com/admin.php?target=order&order_number=' + orders[i].orderNumber;
+				list += '<li><span class="muted">' + purchaseDate + '</span> - $' + purchaseTotal + ' (<a href="' + orderURL + '" target="_blank">' + orders[i].orderNumber + '</a>)</li>';
+				counter++;
+				if (counter === 10) { 
+					break; 
+				}
+			}
+			return list;
+		}
+
+		let orderList = listOrders(response[1].orders);
 
 		let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
-							 '<ul class="c-sb-list c-sb-list--two-line">' +
-							   '<li class="c-sb-list-item">' +
-							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Customer since' +
-							   	   '<span class="c-sb-list-item__text">' + date_added + '</span>' +
-							   	 '</span>' +
-							   '</li>' +
-							   '<li class="c-sb-list-item">' +
-							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Customer profile' +
-							   	   '<span class="c-sb-list-item__text"><a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + response[0].profile.login + '</span>' +
-							   	 '</span>' +
-							   '</li>' +
-							   '<li class="c-sb-list-item">' +
-							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Orders with Boutsy (as customer)' +
-							   	   '<span class="c-sb-list-item__text">' + numberOrders + '</span>' +
-							   	 '</span>' +
-							   '</li>' +
-							   '<li class="c-sb-list-item">' +
-							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Dollars spent (as customer)' +
-							   	   '<span class="c-sb-list-item__text">$' + grandTotal + '</span>' +
-							   	 '</span>' +
-							   '</li>' +
-							   '<li class="c-sb-list-item">' +
-							   	 '<span class="c-sb-list-item__label">' +
-							   	   'Also, here is a drawing of a cloud' +
-							   	   '<span class="c-sb-list-item__text"><i class="icon-cloud"></i></span>' +
-							   	 '</span>' +
-							   '</li>' +
-							 '</ul>';
+					'<div class="c-sb-section c-sb-section--toggle">' +
+						'<div class="c-sb-section__title js-sb-toggle">' +
+							'Profile <i class="caret sb-caret"></i>' +
+						'</div>' +
+						'<ul class="unstyled">' +
+					  	'<li>' +
+					  		'<strong>' +
+						   		'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
+						 		'</strong>' +
+					  	'</li>' +
+						  '<li>' +
+						  	'$' + grandTotal + ' lifetime spending' +
+						  '</li>' +
+						  '<li>' +
+						  	'Customer since: ' + date_added +
+						  '</li>' +
+						  '<li>' +
+						  	numberOrders + ' orders' +
+						  '</li>' +
+				  	'</ul>' +
+				  '</div>' +
+				  '<div class="c-sb-section c-sb-section--toggle">' +
+				  	'<div class="c-sb-section__title js-sb-toggle">' +
+				  		'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
+				  		'<i class="caret sb-caret"></i>' +
+				  	'</div>' +
+				  	'<div class="c-sb-section__body">' +
+				  		'<ul class="unstyled">' +
+				  			orderList +
+				  		'</ul>' +
+				  	'</div>' +
+				  '</div>';
 
-		let helpScoutResponse = { html: ""};
-
-		let escaped = JSON.stringify(html);
+		let helpScoutResponse = {};
 
 		helpScoutResponse.html = html;
 
-	res.send(helpScoutResponse);
+		res.send(helpScoutResponse);
+
+	} else if (response[0].profile.access_level === 100) {
+
+		let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
+		let additionalDetails = await details
+			.then((data) => {
+				console.log("additionalDetails: ", data);
+				console.log("conversations: ", data.data.conversations);
+				// console.log("products: ", data.data.products);
+				console.log("companyFieldValues: ", data.data.companyFieldValues);
+				console.log("cleanUrls: ", data.data.cleanURLs);
+				console.log("vendorPartners: ", data.data.vendorPartners);
+			})
+			.catch((error) => {
+				console.log(error.message);
+			});
+    res.send({html: "<h4>Beep-Boop under construction</h4>"})
+	}
+
 	res.end();
 })
 
@@ -136,10 +179,7 @@ function timeConverter(UNIX_timestamp){
   let year = a.getFullYear();
   let month = months[a.getMonth()];
   let date = a.getDate();
-  let hour = a.getHours();
-  let min = a.getMinutes();
-  let sec = a.getSeconds();
-  let time = month + ' ' + date + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+  let time = month + ' ' + date + ' ' + year;
   return time;
 }
 
