@@ -100,7 +100,7 @@ router.post('/data', async function(req, res) {
 				let purchaseDate = timeConverter(orders[i].date);
 				let purchaseTotal = Math.round(orders[i].total);
 				let orderURL = 'https://boutsy.com/admin.php?target=order&order_number=' + orders[i].orderNumber;
-				list += '<li><span class="muted">' + purchaseDate + '</span> - $' + purchaseTotal + ' (<a href="' + orderURL + '" target="_blank">' + orders[i].orderNumber + '</a>)</li>';
+				list += '<li><span class="muted">' + purchaseDate + '</span> - $' + purchaseTotal + ' (<a href="' + orderURL + '" target="_blank">#' + orders[i].orderNumber + '</a>)</li>';
 				counter++;
 				if (counter === 10) { 
 					break; 
@@ -116,22 +116,24 @@ router.post('/data', async function(req, res) {
 						'<div class="c-sb-section__title js-sb-toggle">' +
 							'Profile <i class="caret sb-caret"></i>' +
 						'</div>' +
-						'<ul class="unstyled">' +
-					  	'<li>' +
-					  		'<strong>' +
-						   		'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
-						 		'</strong>' +
-					  	'</li>' +
-						  '<li>' +
-						  	'$' + grandTotal + ' lifetime spending' +
-						  '</li>' +
-						  '<li>' +
-						  	'Customer since: ' + date_added +
-						  '</li>' +
-						  '<li>' +
-						  	numberOrders + ' orders' +
-						  '</li>' +
-				  	'</ul>' +
+						'<div class="c-sb-section__body">' +
+							'<ul class="unstyled">' +
+						  	'<li>' +
+						  		'<strong>' +
+							   		'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
+							 		'</strong>' +
+						  	'</li>' +
+							  '<li>' +
+							  	'$' + grandTotal + ' lifetime spending' +
+							  '</li>' +
+							  '<li>' +
+							  	'Customer since: ' + date_added +
+							  '</li>' +
+							  '<li>' +
+							  	numberOrders + ' orders' +
+							  '</li>' +
+					  	'</ul>' +
+					  '</div>' +
 				  '</div>' +
 				  '<div class="c-sb-section c-sb-section--toggle">' +
 				  	'<div class="c-sb-section__title js-sb-toggle">' +
