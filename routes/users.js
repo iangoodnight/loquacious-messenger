@@ -77,6 +77,7 @@ router.post('/data', async function(req, res) {
 	);
 
 
+	console.log(response[0].profile);
 
 	if (response[0].profile !== undefined) {
 		if (response[0].profile.access_level !== 100) {
@@ -217,9 +218,9 @@ router.post('/data', async function(req, res) {
 			res.send(helpScoutResponse);
 	
     	// res.send({html: "<h4>Beep-Boop under construction</h4>"})
-		} else {
-    	res.send({html: "<h4>Probably a ghost.</h4>"})
-		};
+		}; 
+	} else {
+    res.send({html: "<h4>Probably a ghost.</h4>"})
 	};
 	// test
 
