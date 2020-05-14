@@ -82,8 +82,6 @@ router.post('/data', async function(req, res) {
 	if (response[0].profile !== undefined) {
 		if (response[0].profile.access_level !== 100) {
 			let date_added = timeConverter(response[0].profile.added);
-			console.log(response[1].orders[0]);
-			console.log(response[1].orders[6]);
 			let totals = response[1].orders;
 			let numberOrders = response[1].orders.length;
 			function totalSpent(totals) {
@@ -144,13 +142,7 @@ router.post('/data', async function(req, res) {
 			let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
 			let additionalDetails = await details
 				.then((data) => {
-					// console.log("additionalDetails: ", data);
-					console.log("conversations: ", data.data.conversations);
-					// console.log("products: ", data.data.products);
-					console.log("companyFieldValues: ", data.data.companyFieldValues);
-					console.log("cleanUrls: ", data.data.cleanURLs);
-					console.log("vendorPartners: ", data.data.vendorPartners);
-					console.log("categories: ", data.data.categories);
+
 					return data.data;
 				})
 				.catch((error) => {
@@ -171,8 +163,10 @@ router.post('/data', async function(req, res) {
 			let vendorCategories = await getCategories(additionalDetails);
 			let numberProducts = additionalDetails.products.length;
 			let frontEndCatURL;
-			console.log("vendorCategories: ", vendorCategories.cats);
-			console.log("Vendor Translations: ", vendorData);
+			let shippingWarning = '';
+			let unTrustedWarning = '';
+			// console.log("vendorCategories: ", vendorCategories.cats);
+			// console.log("Vendor Translations: ", vendorData);
 			if (vendorCategories.cats.length !== 0) {
 				frontEndCatURL = '<a href="https://boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'		
 			} else {
@@ -185,8 +179,16 @@ router.post('/data', async function(req, res) {
 					vendorBalance += transaction.value;
 				})
 			};
+
+			if (additionalDetails.shippingMethods.length === 0) {
+				shippingWarning = '<li class="red">This vendor has no shipping methods</li>';
+			};
+
+			if (additionalDetails.vendor.isTrustedVendor === false) {
+				unTrustedWarning = '<li class="red">This vendor is untrusted.</li>';				
+			}
 	
-			console.log("Debug: ", additionalDetails.cleanURLs);
+			// console.log("Debug: ", additionalDetails.cleanURLs);
 			let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
 						'<div class="c-sb-section c-sb-section--toggle">' +
 							'<div class="c-sb-section__title js-sb-toggle">' +
@@ -211,6 +213,8 @@ router.post('/data', async function(req, res) {
 							  	'<li>' +
 							  		'Vendor Balance: $' + Math.round(vendorBalance) +
 							  	'</li>' +
+							  	shippingWarning +
+							  	unTrustedWarning +
 					  		'</ul>' +
 					  	'</div>' +
 				  	'</div>';
@@ -236,7 +240,7 @@ function listOrders(orders) {
 	let list = '';
 	for (var i = orders.length - 1; i >= 0; i--) {
 		let purchaseDate = timeConverter(orders[i].date);
-		let purchaseTotal = Math.round(orders[i].total);
+		let purchaseTotal = Math.round(orders[i].total)*(-1);
 		let orderURL = 'https://boutsy.com/admin.php?target=order&order_number=' + orders[i].orderNumber;
 		list += '<li><span class="muted">' + purchaseDate + '</span> - $' + purchaseTotal + ' (<a href="' + orderURL + '" target="_blank">#' + orders[i].orderNumber + '</a>)</li>';
 		counter++;
@@ -258,7 +262,7 @@ function timeConverter(UNIX_timestamp){
 };
 
 async function getCategories(details) {
-	console.log("Let's see the details: ", details);
+	// console.log("Let's see the details: ", details);
 	let categoryArr = details.categories;
 	let primaryLevelCats = [];
 	let formattedResponse = [];
