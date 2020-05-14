@@ -296,7 +296,7 @@ async function getCategories(details) {
 					});
 
 				console.log("Kill the parents: ", parentCategory);
-				let newLi = '<a href="https://boutsy.com/admin.php?target=category&id=' + catID + '" target="_blank>' + catTranslations[parentCategory.parent.category_id] + '</a>';
+				let newLi = '<a href="https://boutsy.com/admin.php?target=category&id=' + catID + '" target="_blank">' + catTranslations[parentCategory.parent.category_id] + '</a>';
 				li += newLi;
 				console.log("LI: ", li);
 				formattedResponse.push(li);
