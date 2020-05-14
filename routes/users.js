@@ -173,8 +173,12 @@ router.post('/data', async function(req, res) {
 			let frontEndCatURL;
 			console.log("vendorCategories: ", vendorCategories.cats);
 			console.log("Vendor Translations: ", vendorData);
-			vendorCategories.cats[0].category_id ? frontEndCatURL = '<a href="https://dev.boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'
-			: numberProducts;
+			if (vendorCategories.cats.length !== 0) {
+				frontEndCatURL = '<a href="https://boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'		
+			} else {
+				frontEndCatURL = "0";
+			};
+
 			let vendorBalance = 0;
 			if (additionalDetails.profileTransactions.length > 0) {
 				additionalDetails.profileTransactions.forEach(transaction => {
@@ -273,7 +277,8 @@ async function getCategories(details) {
 		1845: "Coming Soon"
 	};
 	if (categoryArr.length !== 0) {
-		categoryArr.forEach(async cat => {
+		for(let i = 0; i < categoryArr.length; i++) {
+			let cat = categoryArr[i];
 			console.log("Meow, I'm a cat: ", cat);
 			if (cat.depth === 1) {
 				let li = '';
@@ -293,9 +298,11 @@ async function getCategories(details) {
 				console.log("Kill the parents: ", parentCategory);
 				let newLi = '<a href="https://boutsy.com/admin.php?target=category&id=' + catID + '" target="_blank>' + catTranslations[parentCategory.parent.category_id] + '</a>';
 				li += newLi;
+				console.log("LI: ", li);
 				formattedResponse.push(li);
 			};
-		});
+		};
+		console.log("FORMATTEDRESPONSE: ", formattedResponse);
 		let html = formattedResponse.join('');
 		return {
 			html: html,
@@ -303,9 +310,10 @@ async function getCategories(details) {
 		};
 	} else {
 		formattedResponse.push('Uncategorized');
+		console.log("FORMATTEDRESPONSE: ", formattedResponse[0]);
 		return {
 			html: formattedResponse[0],
-			cats: []
+			cats: [[]]
 		}
 	}
 };
