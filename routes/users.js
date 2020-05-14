@@ -76,158 +76,151 @@ router.post('/data', async function(req, res) {
 		}
 	);
 
-	let date_added = timeConverter(response[0].profile.added);
 
-	if (response[0].profile.access_level !== 100) {
 
-		console.log(response[1].orders[0]);
-		console.log(response[1].orders[6]);
-		let totals = response[1].orders;
-		let numberOrders = response[1].orders.length;
-		function totalSpent(totals) {
-			let total = 0;
-			totals.forEach(order => {total += order.subtotal});
-			return Math.round(total);
-		};
-		let grandTotal = totalSpent(totals);
-		let subOrders;
-		numberOrders > 10 ? subOrders = 10: subOrders = numberOrders;
-
-		let orderList = listOrders(response[1].orders);
-
-		let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
-					'<div class="c-sb-section c-sb-section--toggle">' +
-						'<div class="c-sb-section__title js-sb-toggle">' +
-							'Profile <i class="caret sb-caret"></i>' +
-						'</div>' +
-						'<div class="c-sb-section__body">' +
-							'<ul class="unstyled">' +
-						  	'<li>' +
-						  		'<strong>' +
-							   		'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
-							 		'</strong>' +
-						  	'</li>' +
-							  '<li>' +
-							  	'$' + grandTotal + ' lifetime spending' +
-							  '</li>' +
-							  '<li>' +
-							  	'Customer since: ' + date_added +
-							  '</li>' +
-							  '<li>' +
-							  	numberOrders + ' orders' +
-							  '</li>' +
-					  	'</ul>' +
-					  '</div>' +
-				  '</div>' +
-				  '<div class="c-sb-section c-sb-section--toggle">' +
-				  	'<div class="c-sb-section__title js-sb-toggle">' +
-				  		'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
-				  		'<i class="caret sb-caret"></i>' +
+	if (response[0].profile !== undefined) {
+		if (response[0].profile.access_level !== 100) {
+			let date_added = timeConverter(response[0].profile.added);
+			console.log(response[1].orders[0]);
+			console.log(response[1].orders[6]);
+			let totals = response[1].orders;
+			let numberOrders = response[1].orders.length;
+			function totalSpent(totals) {
+				let total = 0;
+				totals.forEach(order => {total += order.subtotal});
+				return Math.round(total);
+			};
+			let grandTotal = totalSpent(totals);
+			let subOrders;
+			numberOrders > 10 ? subOrders = 10: subOrders = numberOrders;
+	
+			let orderList = listOrders(response[1].orders);
+	
+			let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
+						'<div class="c-sb-section c-sb-section--toggle">' +
+							'<div class="c-sb-section__title js-sb-toggle">' +
+								'Profile <i class="caret sb-caret"></i>' +
+							'</div>' +
+							'<div class="c-sb-section__body">' +
+								'<ul class="unstyled">' +
+						  		'<li>' +
+						  			'<strong>' +
+							   			'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
+							 			'</strong>' +
+						  		'</li>' +
+							  	'<li>' +
+							  		'$' + grandTotal + ' lifetime spending' +
+							  	'</li>' +
+							  	'<li>' +
+							  		'Customer since: ' + date_added +
+							  	'</li>' +
+							  	'<li>' +
+							  		numberOrders + ' orders' +
+							  	'</li>' +
+					  		'</ul>' +
+					  	'</div>' +
 				  	'</div>' +
-				  	'<div class="c-sb-section__body">' +
-				  		'<ul class="unstyled">' +
-				  			orderList +
-				  		'</ul>' +
-				  	'</div>' +
-				  '</div>';
-
-		let helpScoutResponse = {};
-
-		helpScoutResponse.html = html;
-
-		res.send(helpScoutResponse);
-
-	} else if (response[0].profile.access_level === 100) {
-
-		let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
-		let additionalDetails = await details
-			.then((data) => {
-				// console.log("additionalDetails: ", data);
-				console.log("conversations: ", data.data.conversations);
-				// console.log("products: ", data.data.products);
-				console.log("companyFieldValues: ", data.data.companyFieldValues);
-				console.log("cleanUrls: ", data.data.cleanURLs);
-				console.log("vendorPartners: ", data.data.vendorPartners);
-				console.log("categories: ", data.data.categories);
-				return data.data;
-			})
-			.catch((error) => {
-				console.log(error.message);
-			}
-		);
-		// console.log('Returned Data: ', additionalDetails);
-		let vendorTranslations = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=xc-multivendor-vendor/" + additionalDetails.vendor.id);
-		let vendorData = await vendorTranslations
-			.then(data => {
-				return data.data;
-			})
-			.catch(error => {
-				console.log(error.message);
-			});
-
-		// console.log("VendorData: ", vendorData);
-		let vendorCategories = await getCategories(additionalDetails);
-		let numberProducts = additionalDetails.products.length;
-		let frontEndCatURL;
-		console.log("vendorCategories: ", vendorCategories.cats);
-		console.log("Vendor Translations: ", vendorData);
-		vendorCategories.cats[0].category_id ? frontEndCatURL = '<a href="https://dev.boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'
-		: numberProducts;
-		let vendorBalance = 0;
-		if (additionalDetails.profileTransactions.length > 0) {
-			additionalDetails.profileTransactions.forEach(transaction => {
-				vendorBalance += transaction.value;
-			})
+				  	'<div class="c-sb-section c-sb-section--toggle">' +
+				  		'<div class="c-sb-section__title js-sb-toggle">' +
+				  			'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
+				  			'<i class="caret sb-caret"></i>' +
+				  		'</div>' +
+				  		'<div class="c-sb-section__body">' +
+				  			'<ul class="unstyled">' +
+				  				orderList +
+				  			'</ul>' +
+				  		'</div>' +
+				  	'</div>';
+	
+			let helpScoutResponse = {};
+	
+			helpScoutResponse.html = html;
+	
+			res.send(helpScoutResponse);
+	
+		} else if (response[0].profile.access_level === 100) {
+			let date_added = timeConverter(response[0].profile.added);
+			let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
+			let additionalDetails = await details
+				.then((data) => {
+					// console.log("additionalDetails: ", data);
+					console.log("conversations: ", data.data.conversations);
+					// console.log("products: ", data.data.products);
+					console.log("companyFieldValues: ", data.data.companyFieldValues);
+					console.log("cleanUrls: ", data.data.cleanURLs);
+					console.log("vendorPartners: ", data.data.vendorPartners);
+					console.log("categories: ", data.data.categories);
+					return data.data;
+				})
+				.catch((error) => {
+					console.log(error.message);
+				}
+			);
+			// console.log('Returned Data: ', additionalDetails);
+			let vendorTranslations = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=xc-multivendor-vendor/" + additionalDetails.vendor.id);
+			let vendorData = await vendorTranslations
+				.then(data => {
+					return data.data;
+				})
+				.catch(error => {
+					console.log(error.message);
+				});
+	
+			// console.log("VendorData: ", vendorData);
+			let vendorCategories = await getCategories(additionalDetails);
+			let numberProducts = additionalDetails.products.length;
+			let frontEndCatURL;
+			console.log("vendorCategories: ", vendorCategories.cats);
+			console.log("Vendor Translations: ", vendorData);
+			vendorCategories.cats[0].category_id ? frontEndCatURL = '<a href="https://dev.boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'
+			: numberProducts;
+			let vendorBalance = 0;
+			if (additionalDetails.profileTransactions.length > 0) {
+				additionalDetails.profileTransactions.forEach(transaction => {
+					vendorBalance += transaction.value;
+				})
+			};
+	
+			console.log("Debug: ", additionalDetails.cleanURLs);
+			let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
+						'<div class="c-sb-section c-sb-section--toggle">' +
+							'<div class="c-sb-section__title js-sb-toggle">' +
+								'Profile <i class="caret sb-caret"></i>' +
+							'</div>' +
+							'<div class="c-sb-section__body">' +
+								'<ul class="unstyled">' +
+						  		'<li>' +
+						  			'<strong>' +
+							   			'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + vendorData.translations[0].companyName + '</a>' +
+							 			'</strong>' +
+						  		'</li>' +
+							  	'<li>' +
+							  		'Categorized as ' + vendorCategories.html +
+							  	'</li>' +
+							  	'<li>' +
+							  		'Vendor since: ' + date_added +
+							  	'</li>' +
+							  	'<li>' +
+							  		frontEndCatURL  + ' products' +
+							  	'</li>' +
+							  	'<li>' +
+							  		'Vendor Balance: $' + Math.round(vendorBalance) +
+							  	'</li>' +
+					  		'</ul>' +
+					  	'</div>' +
+				  	'</div>';
+	
+			let helpScoutResponse = {};
+	
+			helpScoutResponse.html = html;
+	
+			res.send(helpScoutResponse);
+	
+    	// res.send({html: "<h4>Beep-Boop under construction</h4>"})
+		} else {
+    	res.send({html: "<h4>Probably a ghost.</h4>"})
 		};
-
-		console.log("Debug: ", additionalDetails.cleanURLs);
-		let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
-					'<div class="c-sb-section c-sb-section--toggle">' +
-						'<div class="c-sb-section__title js-sb-toggle">' +
-							'Profile <i class="caret sb-caret"></i>' +
-						'</div>' +
-						'<div class="c-sb-section__body">' +
-							'<ul class="unstyled">' +
-						  	'<li>' +
-						  		'<strong>' +
-							   		'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + vendorData.translations[0].companyName + '</a>' +
-							 		'</strong>' +
-						  	'</li>' +
-							  '<li>' +
-							  	'Categorized as ' + vendorCategories.html +
-							  '</li>' +
-							  '<li>' +
-							  	'Vendor since: ' + date_added +
-							  '</li>' +
-							  '<li>' +
-							  	frontEndCatURL  + ' products' +
-							  '</li>' +
-							  '<li>' +
-							  	'Vendor Balance: $' + Math.round(vendorBalance) +
-							  '</li>' +
-					  	'</ul>' +
-					  '</div>' +
-				  '</div>';
-				  // '<div class="c-sb-section c-sb-section--toggle">' +
-				  // 	'<div class="c-sb-section__title js-sb-toggle">' +
-				  // 		'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
-				  // 		'<i class="caret sb-caret"></i>' +
-				  // 	'</div>' +
-				  // 	'<div class="c-sb-section__body">' +
-				  // 		'<ul class="unstyled">' +
-				  // 			orderList +
-				  // 		'</ul>' +
-				  // 	'</div>' +
-				  // '</div>';
-
-		let helpScoutResponse = {};
-
-		helpScoutResponse.html = html;
-
-		res.send(helpScoutResponse);
-
-    // res.send({html: "<h4>Beep-Boop under construction</h4>"})
-	}
+	};
 	// test
 
 	res.end();
