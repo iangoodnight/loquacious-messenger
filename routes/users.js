@@ -211,7 +211,7 @@ router.post('/data', async function(req, res) {
 							  		frontEndCatURL  + ' products' +
 							  	'</li>' +
 							  	'<li>' +
-							  		'Vendor Balance: $' + Math.round(vendorBalance) +
+							  		'Vendor Balance: $' + Math.round(vendorBalance)*(-1) +
 							  	'</li>' +
 							  	shippingWarning +
 							  	unTrustedWarning +
