@@ -34,205 +34,210 @@ router.post('/data', async function(req, res) {
 	// console.log(req.body);
 	// console.log(req);
 	let email = req.body.customer.email;
+	let mailbox = req.body.mailbox.email;
+
+	if (mailbox === 'support@boutsy.com' || mailbox === 'build@boutsy.com'|| mailbox === 'sales@boutsy.com') {
 	//  Defining our intial promises.  For customers, this will be all the information we need.
-	let profile = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile&_cnd[login]=" + email);
-	let orders = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=order&_cnd[email]=" + email); 
-	//  Initial API calls
-	let response = await Promise.allSettled([profile, orders])
-		.then((values) => {
-
-			let results = values.map(v => {
-				let data = {};
-				if(v.status === 'fulfilled') {
-
-					let target = v.value.config.url.split('&_path=')[1].split('&_cnd')[0];
-					// console.log(v.value.data[0]);
-					console.log('target: ', target);
-					switch (target) {
-						case 'profile':
-							// console.log('case: profile');
-							data.profile = v.value.data[0];
-							break;
-						case 'order':
-							// console.log('case: order');
-							data.orders = v.value.data;
-							break;
-						default:
-							break;
-					};
-					return data;	
-				}
-
-				return `REJECTED: ${v.reason.message}`;
-			});
-			return results;
-		})
-		.then(results => {
-			// console.log("Results: ", results);
-			return results;
-		})
-		.catch(reasons => {
-			console.log(reasons);
-		}
-	);
-
-
-	console.log(response[0].profile);
-
-	if (response[0].profile !== undefined) {
-		if (response[0].profile.access_level !== 100) {
-			let date_added = timeConverter(response[0].profile.added);
-			let totals = response[1].orders;
-			let numberOrders = response[1].orders.length;
-			function totalSpent(totals) {
-				let total = 0;
-				totals.forEach(order => {total += order.subtotal});
-				return Math.round(total);
-			};
-			let grandTotal = totalSpent(totals);
-			let subOrders;
-			numberOrders > 10 ? subOrders = 10: subOrders = numberOrders;
+		let profile = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile&_cnd[login]=" + email);
+		let orders = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=order&_cnd[email]=" + email); 
+		//  Initial API calls
+		let response = await Promise.allSettled([profile, orders])
+			.then((values) => {
 	
-			let orderList = listOrders(response[1].orders);
+				let results = values.map(v => {
+					let data = {};
+					if(v.status === 'fulfilled') {
 	
-			let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
-						'<div class="c-sb-section c-sb-section--toggle">' +
-							'<div class="c-sb-section__title js-sb-toggle">' +
-								'Profile <i class="caret sb-caret"></i>' +
-							'</div>' +
-							'<div class="c-sb-section__body">' +
-								'<ul class="unstyled">' +
-						  		'<li>' +
-						  			'<strong>' +
-							   			'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
-							 			'</strong>' +
-						  		'</li>' +
-							  	'<li>' +
-							  		'$' + grandTotal + ' lifetime spending' +
-							  	'</li>' +
-							  	'<li>' +
-							  		'Customer since: ' + date_added +
-							  	'</li>' +
-							  	'<li>' +
-							  		numberOrders + ' orders' +
-							  	'</li>' +
-					  		'</ul>' +
-					  	'</div>' +
-				  	'</div>' +
-				  	'<div class="c-sb-section c-sb-section--toggle">' +
-				  		'<div class="c-sb-section__title js-sb-toggle">' +
-				  			'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
-				  			'<i class="caret sb-caret"></i>' +
-				  		'</div>' +
-				  		'<div class="c-sb-section__body">' +
-				  			'<ul class="unstyled">' +
-				  				orderList +
-				  			'</ul>' +
-				  		'</div>' +
-				  	'</div>';
+						let target = v.value.config.url.split('&_path=')[1].split('&_cnd')[0];
+						// console.log(v.value.data[0]);
+						console.log('target: ', target);
+						switch (target) {
+							case 'profile':
+								// console.log('case: profile');
+								data.profile = v.value.data[0];
+								break;
+							case 'order':
+								// console.log('case: order');
+								data.orders = v.value.data;
+								break;
+							default:
+								break;
+						};
+						return data;	
+					}
 	
-			let helpScoutResponse = {};
-	
-			helpScoutResponse.html = html;
-	
-			res.send(helpScoutResponse);
-	
-		} else if (response[0].profile.access_level === 100) {
-			let date_added = timeConverter(response[0].profile.added);
-			let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
-			let additionalDetails = await details
-				.then((data) => {
-
-					return data.data;
-				})
-				.catch((error) => {
-					console.log(error.message);
-				}
-			);
-			// console.log('Returned Data: ', additionalDetails);
-			let vendorTranslations = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=xc-multivendor-vendor/" + additionalDetails.vendor.id);
-			let vendorData = await vendorTranslations
-				.then(data => {
-					return data.data;
-				})
-				.catch(error => {
-					console.log(error.message);
+					return `REJECTED: ${v.reason.message}`;
 				});
-	
-			// console.log("VendorData: ", vendorData);
-			let vendorCategories = await getCategories(additionalDetails);
-			let numberProducts = additionalDetails.products.length;
-			let frontEndCatURL;
-			let shippingWarning = '';
-			let unTrustedWarning = '';
-			// console.log("vendorCategories: ", vendorCategories.cats);
-			// console.log("Vendor Translations: ", vendorData);
-			if (vendorCategories.cats.length !== 0) {
-				frontEndCatURL = '<a href="https://boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'		
-			} else {
-				frontEndCatURL = "0";
-			};
-
-			let vendorBalance = 0;
-			if (additionalDetails.profileTransactions.length > 0) {
-				additionalDetails.profileTransactions.forEach(transaction => {
-					vendorBalance += transaction.value;
-				})
-			};
-
-			if (additionalDetails.shippingMethods.length === 0) {
-				shippingWarning = '<li class="red">This vendor has no shipping methods</li>';
-			};
-
-			if (additionalDetails.vendor.isTrustedVendor === false) {
-				unTrustedWarning = '<li class="red">This vendor is untrusted.</li>';				
+				return results;
+			})
+			.then(results => {
+				// console.log("Results: ", results);
+				return results;
+			})
+			.catch(reasons => {
+				console.log(reasons);
 			}
+		);
 	
-			// console.log("Debug: ", additionalDetails.cleanURLs);
-			let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
-						'<div class="c-sb-section c-sb-section--toggle">' +
-							'<div class="c-sb-section__title js-sb-toggle">' +
-								'Profile <i class="caret sb-caret"></i>' +
-							'</div>' +
-							'<div class="c-sb-section__body">' +
-								'<ul class="unstyled">' +
-						  		'<li>' +
-						  			'<strong>' +
-							   			'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + vendorData.translations[0].companyName + '</a>' +
-							 			'</strong>' +
-						  		'</li>' +
-							  	'<li>' +
-							  		'Categorized as ' + vendorCategories.html +
-							  	'</li>' +
-							  	'<li>' +
-							  		'Vendor since: ' + date_added +
-							  	'</li>' +
-							  	'<li>' +
-							  		frontEndCatURL  + ' products' +
-							  	'</li>' +
-							  	'<li>' +
-							  		'Vendor Balance: $' + Math.round(vendorBalance)*(-1) +
-							  	'</li>' +
-							  	shippingWarning +
-							  	unTrustedWarning +
-					  		'</ul>' +
-					  	'</div>' +
-				  	'</div>';
 	
-			let helpScoutResponse = {};
+		console.log(response[0].profile);
 	
-			helpScoutResponse.html = html;
+		if (response[0].profile !== undefined) {
+			if (response[0].profile.access_level !== 100) {
+				let date_added = timeConverter(response[0].profile.added);
+				let totals = response[1].orders;
+				let numberOrders = response[1].orders.length;
+				function totalSpent(totals) {
+					let total = 0;
+					totals.forEach(order => {total += order.subtotal});
+					return Math.round(total);
+				};
+				let grandTotal = totalSpent(totals);
+				let subOrders;
+				numberOrders > 10 ? subOrders = 10: subOrders = numberOrders;
+		
+				let orderList = listOrders(response[1].orders);
+		
+				let html = '<h4><a href="https://boutsy.com/ian-s-hats.html">Boutsy</a></h4>' +
+							'<div class="c-sb-section c-sb-section--toggle">' +
+								'<div class="c-sb-section__title js-sb-toggle">' +
+									'Profile <i class="caret sb-caret"></i>' +
+								'</div>' +
+								'<div class="c-sb-section__body">' +
+									'<ul class="unstyled">' +
+						  			'<li>' +
+						  				'<strong>' +
+							   				'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id + '" target="_blank">' + req.body.customer.fname + ' ' + req.body.customer.lname + '</a>' +
+							 				'</strong>' +
+						  			'</li>' +
+							  		'<li>' +
+							  			'$' + grandTotal + ' lifetime spending' +
+							  		'</li>' +
+							  		'<li>' +
+							  			'Customer since: ' + date_added +
+							  		'</li>' +
+							  		'<li>' +
+							  			numberOrders + ' orders' +
+							  		'</li>' +
+					  			'</ul>' +
+					  		'</div>' +
+				  		'</div>' +
+				  		'<div class="c-sb-section c-sb-section--toggle">' +
+				  			'<div class="c-sb-section__title js-sb-toggle">' +
+				  				'<i class="icon-cart icon-sb"></i> Order History (' + subOrders + ')' +
+				  				'<i class="caret sb-caret"></i>' +
+				  			'</div>' +
+				  			'<div class="c-sb-section__body">' +
+				  				'<ul class="unstyled">' +
+				  					orderList +
+				  				'</ul>' +
+				  			'</div>' +
+				  		'</div>';
+		
+				let helpScoutResponse = {};
+		
+				helpScoutResponse.html = html;
+		
+				res.send(helpScoutResponse);
+		
+			} else if (response[0].profile.access_level === 100) {
+				let date_added = timeConverter(response[0].profile.added);
+				let details = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile/" + response[0].profile.profile_id);
+				let additionalDetails = await details
+					.then((data) => {
 	
-			res.send(helpScoutResponse);
+						return data.data;
+					})
+					.catch((error) => {
+						console.log(error.message);
+					}
+				);
+				// console.log('Returned Data: ', additionalDetails);
+				let vendorTranslations = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=xc-multivendor-vendor/" + additionalDetails.vendor.id);
+				let vendorData = await vendorTranslations
+					.then(data => {
+						return data.data;
+					})
+					.catch(error => {
+						console.log(error.message);
+					});
+		
+				// console.log("VendorData: ", vendorData);
+				let vendorCategories = await getCategories(additionalDetails);
+				let numberProducts = additionalDetails.products.length;
+				let frontEndCatURL;
+				let shippingWarning = '';
+				let unTrustedWarning = '';
+				// console.log("vendorCategories: ", vendorCategories.cats);
+				// console.log("Vendor Translations: ", vendorData);
+				if (vendorCategories.cats.length !== 0) {
+					frontEndCatURL = '<a href="https://boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'		
+				} else {
+					frontEndCatURL = "0";
+				};
 	
-    	// res.send({html: "<h4>Beep-Boop under construction</h4>"})
-		}; 
-	} else {
-    res.send({html: "<h4>Probably a ghost.</h4>"})
-	};
-	// test
+				let vendorBalance = 0;
+				if (additionalDetails.profileTransactions.length > 0) {
+					additionalDetails.profileTransactions.forEach(transaction => {
+						vendorBalance += transaction.value;
+					})
+				};
+	
+				if (additionalDetails.shippingMethods.length === 0) {
+					shippingWarning = '<li class="red">This vendor has no shipping methods</li>';
+				};
+	
+				if (additionalDetails.vendor.isTrustedVendor === false) {
+					unTrustedWarning = '<li class="red">This vendor is untrusted.</li>';				
+				}
+		
+				// console.log("Debug: ", additionalDetails.cleanURLs);
+				let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
+							'<div class="c-sb-section c-sb-section--toggle">' +
+								'<div class="c-sb-section__title js-sb-toggle">' +
+									'Profile <i class="caret sb-caret"></i>' +
+								'</div>' +
+								'<div class="c-sb-section__body">' +
+									'<ul class="unstyled">' +
+						  			'<li>' +
+						  				'<strong>' +
+							   				'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + vendorData.translations[0].companyName + '</a>' +
+							 				'</strong>' +
+						  			'</li>' +
+							  		'<li>' +
+							  			'Categorized as ' + vendorCategories.html +
+							  		'</li>' +
+							  		'<li>' +
+							  			'Vendor since: ' + date_added +
+							  		'</li>' +
+							  		'<li>' +
+							  			frontEndCatURL  + ' products' +
+							  		'</li>' +
+							  		'<li>' +
+							  			'Vendor Balance: $' + Math.round(vendorBalance)*(-1) +
+							  		'</li>' +
+							  		shippingWarning +
+							  		unTrustedWarning +
+					  			'</ul>' +
+					  		'</div>' +
+				  		'</div>';
+		
+				let helpScoutResponse = {};
+		
+				helpScoutResponse.html = html;
+		
+				res.send(helpScoutResponse);
+		
+    		// res.send({html: "<h4>Beep-Boop under construction</h4>"})
+			}; 
+		} else {
+    	res.send({html: "<h4>Probably a ghost.</h4>"})
+		};
+		// test
+	
+		res.end();
 
-	res.end();
+	} // End Mailbox "IF"
 });
 
 function listOrders(orders) {
@@ -320,6 +325,7 @@ async function getCategories(details) {
 			cats: [[]]
 		}
 	}
+
 };
 
 module.exports = router;
