@@ -389,11 +389,11 @@ function listBCOrders(orders) {
 		orders[i].shipped !== 'N/A' ? shipped = ' on ' + orders[i].shipped: shipped = '';
 		orders[i].notes !== '' ? notes = '<li>Notes: ' + orders[i].notes + '</li>' : notes = '';
 
-		let el = '<li>Order #' + orders[i].id + '</li>' +
+		let el = '<li>Order <strong>#' + orders[i].id + '</strong></li>' +
 		'<li>Date: ' + orders[i].created + '</li>' +
 		'<li>Total: $' + orders[i].total + '</li>' +
 		notes +
-		'<li class="divider">Status ' + '<span class="green">' + orders[i].status + '</span>' + shipped + '</li>';
+		'<li class="divider">Status: ' + '<span class="green">' + orders[i].status + '</span>' + shipped + '</li>';
 		list += el;
 	};
 	console.log('List: ', list);
