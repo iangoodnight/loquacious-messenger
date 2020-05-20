@@ -345,7 +345,7 @@ function listBCOrders(orders) {
 		'<li>Order date: ' + orders[i].created + '</li>' +
 		'<li>Order total: $' + orders[i].total + '</li>' +
 		notes +
-		'<li class="divider">Order status ' + orders[i].status + '<span class="green">' + shipped + '</span>' + '</li>';
+		'<li class="divider">Order status ' + '<span class="green">' + orders[i].status + '</span>' + shipped + '</li>';
 		list += el;
 	};
 	console.log('List: ', list);
