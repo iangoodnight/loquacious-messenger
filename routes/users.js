@@ -215,9 +215,30 @@ router.post('/data', async function(req, res) {
 	} else if (mailbox === 'sales@bulkapothecary.com') {
 
 		console.log("Aiming for the BigCommerce API...");
-		let targetUrl = encodeURI('https://api.bigcommerce.com/stores/' + process.env.FF220_STORE_HASH + '/v3/customers?email:in=' + email);
-		console.log("targetURL: ", targetUrl);
-		let profile = await axios.get(targetUrl, 
+		let targetUrlBulk = encodeURI('https://api.bigcommerce.com/stores/' + process.env.BULK_STORE_HASH + '/v3/customers?email:in=' + email);
+		let targetUrlFF220 = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v3/customers?email:in=' + email);
+		let targets = 0;
+		console.log("targetURLBulk: ", targetUrlBulk);
+		// let profile = await axios.get(targetUrlBulk, 
+		// 	{
+		// 	headers: {
+		// 		'accept': 'application/json',
+		// 		'content-type': 'application/json',
+		// 		'x-auth-client': process.env.F220_X_CLIENT,
+		// 		'x-auth-token': process.env.F220_X_TOKEN
+		// 	}
+		// });
+		let profile;
+		let profileBulk = await axios.get(targetUrlBulk, 
+			{
+			headers: {
+				'accept': 'application/json',
+				'content-type': 'application/json',
+				'x-auth-client': process.env.BULK_X_CLIENT,
+				'x-auth-token': process.env.BULK_X_TOKEN
+			}
+		});
+		let profileF22 = await axios.get(targetUrlFF220, 
 			{
 			headers: {
 				'accept': 'application/json',
@@ -226,10 +247,37 @@ router.post('/data', async function(req, res) {
 				'x-auth-token': process.env.F220_X_TOKEN
 			}
 		});
-		let profileId;
-		console.log("Debug: ", profile.data);
+
+		let responseCollection = await Promise.allSettled([profileBulk, profileF22])
+			.then((values) => {
+	
+				let results = values.map(v => {
+					let data = {};
+					if(v.status === 'fulfilled') {
+						data = v.value;
+						return data;	
+					}	
+					return `REJECTED: ${v.reason.message}`;
+				});
+				return results;
+			})
+			.then(results => {
+				// console.log("Results: ", results);
+				return results;
+			})
+			.catch(reasons => {
+				console.log(reasons);
+			}
+		);
+		console.log(responseCollection);
+		responseCollection[0].data.data.length !== 0 ? profile = responseCollection[0] : profile = responseCollection[1];
+		let profileId = '';
+		// console.log("Debug: ", profile.data);
+		// if (profile.data.data.length === 0) {
+
+		// }
 		profile.data.data.length !== 0 ? profileId = profile.data.data[0].id: profileId = '';
-		let ordersUrl = encodeURI('https://api.bigcommerce.com/stores/' + process.env.FF220_STORE_HASH + '/v2/orders?customer_id=' + profileId);
+		let ordersUrl = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v2/orders?customer_id=' + profileId);
 		let orders;
 		if (profileId !== '') {
 			orders = await axios.get(ordersUrl, 
@@ -339,13 +387,13 @@ function listBCOrders(orders) {
 		let shipped = '';
 		let notes = '';
 		orders[i].shipped !== 'N/A' ? shipped = ' on ' + orders[i].shipped: shipped = '';
-		orders[i].notes !== '' ? notes = '<li>Order notes: ' + orders[i].notes + '</li>' : notes = '';
+		orders[i].notes !== '' ? notes = '<li>Notes: ' + orders[i].notes + '</li>' : notes = '';
 
 		let el = '<li>Order #' + orders[i].id + '</li>' +
-		'<li>Order date: ' + orders[i].created + '</li>' +
-		'<li>Order total: $' + orders[i].total + '</li>' +
+		'<li>Date: ' + orders[i].created + '</li>' +
+		'<li>Total: $' + orders[i].total + '</li>' +
 		notes +
-		'<li class="divider">Order status ' + '<span class="green">' + orders[i].status + '</span>' + shipped + '</li>';
+		'<li class="divider">Status ' + '<span class="green">' + orders[i].status + '</span>' + shipped + '</li>';
 		list += el;
 	};
 	console.log('List: ', list);
