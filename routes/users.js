@@ -206,6 +206,7 @@ router.post('/data', async function(req, res) {
 
 		console.log("Aiming for the BigCommerce API...");
 		let targetUrlBulk = encodeURI('https://api.bigcommerce.com/stores/' + process.env.BULK_STORE_HASH + '/v3/customers?email:in=' + email);
+		let targetUrlNato = encodeURI('https://api.bigcommerce.com/stores/' + process.env.NATOIL_STORE_HASH + '/v3/customers?email:in=' + email);		
 		let targetUrlF220 = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v3/customers?email:in=' + email);
 		console.log("Targets: \n", targetUrlBulk, "\n", targetUrlF220);
 		let targets = 0;
@@ -219,6 +220,15 @@ router.post('/data', async function(req, res) {
 				'x-auth-token': process.env.BULK_X_TOKEN
 			}
 		});
+		let profileNato = await axios.get(targetUrlNato, 
+			{
+			headers: {
+				'accept': 'application/json',
+				'content-type': 'application/json',
+				'x-auth-client': process.env.NATOIL_X_CLIENT,
+				'x-auth-token': process.env.NATOIL_X_TOKEN
+			}
+		});
 		let profileF22 = await axios.get(targetUrlF220, 
 			{
 			headers: {
@@ -229,7 +239,7 @@ router.post('/data', async function(req, res) {
 			}
 		});
 
-		let responseCollection = await Promise.allSettled([profileBulk, profileF22])
+		let responseCollection = await Promise.allSettled([profileBulk, profileNato, profileF22])
 			.then((values) => {
 	
 				let results = values.map(v => {
@@ -256,6 +266,7 @@ router.post('/data', async function(req, res) {
 		let hash;
 		let client;
 		let token;
+		let orderPointer;
 
 		if (responseCollection[0].data.data.length !== 0) {
 			profile = responseCollection[0];
@@ -263,13 +274,22 @@ router.post('/data', async function(req, res) {
 			hash = process.env.BULK_STORE_HASH;
 			client = process.env.BULK_X_CLIENT;
 			token = process.env.BULK_X_TOKEN;
-		} else {
+			orderPointer = 'B';
+		} else if (responseCollection[1].data.data.length !== 0) {
 			profile = responseCollection[1];
+			pointer = '<h4><a href="https://naturesoil.com/manage">Nature\'s Oil</a></h4>';
+			hash = process.env.NATOIL_STORE_HASH;
+			client = process.env.NATOIL_X_CLIENT;
+			token = process.env.NATOIL_X_TOKEN;
+			orderPointer = 'N';
+		} else if (responseCollection[2].data.data.length !== 0) {
+			profile = responseCollection[2];
 			pointer = '<h4><a href="https://fashion220.net/manage">Fashion 220</a></h4>';
 			hash = process.env.F220_STORE_HASH;
 			client = process.env.F220_X_CLIENT;
 			token = process.env.F220_X_TOKEN;
-		}
+			orderPointer = 'F';
+		};
 
 		let profileId = '';
 
@@ -304,8 +324,22 @@ router.post('/data', async function(req, res) {
 		let profileHref = '';
 
 		if (orders.data.length !== 0) {
-			profileLink = '<a href="https://www.fashion220.net/manage/orders?customerId=' + profileId + '" target="_blank">' + profile.data.data[0].first_name + ' ' + profile.data.data[0].last_name + '</a>'
-			profileHref = 'https://www.fashion220.net/manage/orders?customerId=' + profileId;
+			switch (orderPointer) {
+				case 'B':
+					profileLink = '<a href="https://www.bulkapothecary.com/manage/orders?customerId=' + profileId + '" target="_blank">' + profile.data.data[0].first_name + ' ' + profile.data.data[0].last_name + '</a>'
+					profileHref = 'https://www.bulkapothecary.com/manage/orders?customerId=' + profileId;
+					break;
+				case 'N':
+					profileLink = '<a href="https://www.naturesoil.com/manage/orders?customerId=' + profileId + '" target="_blank">' + profile.data.data[0].first_name + ' ' + profile.data.data[0].last_name + '</a>'
+					profileHref = 'https://www.naturesoil.com/manage/orders?customerId=' + profileId;
+					break;
+				case 'F':
+					profileLink = '<a href="https://www.fashion220.net/manage/orders?customerId=' + profileId + '" target="_blank">' + profile.data.data[0].first_name + ' ' + profile.data.data[0].last_name + '</a>'
+					profileHref = 'https://www.fashion220.net/manage/orders?customerId=' + profileId;
+					break;
+				default:
+					break;
+			}
 		} else {
 			profileLink = req.body.customer.fname + ' ' + req.body.customer.lname;
 			profileHref = '#';
