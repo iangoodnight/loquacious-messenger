@@ -6,7 +6,8 @@ const axios = require('axios');
 router.post('/data', async function(req, res) {
 	let email = req.body.customer.email;
 	let mailbox = req.body.mailbox.email;
-
+	let randomResponse = ['Probably a ghost.', 'I don\'t know this one.','Beats me.','Beep-Boop, computer error.','Their face looks familiar, but I\'m not sure we\'ve met.','Computer took a break to grab a byte to eat','New customer, who dis?','ლ(ಠ益ಠლ)','Hey there, stranger.','Too sleepy to go on.'];
+	let goofy = randomResponse[Math.floor(Math.random() * 10)];
 	if (mailbox === 'support@boutsy.com' || mailbox === 'build@boutsy.com'|| mailbox === 'sales@boutsy.com') {
 	//  Defining our intial promises.  For customers, this will be all the information we need.
 		let profile = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=profile&_cnd[login]=" + email);
@@ -195,7 +196,8 @@ router.post('/data', async function(req, res) {
 
 			}; 
 		} else {
-    	res.send({html: "<h4>Probably a ghost.</h4>"})
+			let notFound = '<h4>' + goofy + '</h4>';
+    	res.send({html: notFound});
 		};
 		// test
 	
@@ -394,10 +396,12 @@ router.post('/data', async function(req, res) {
 				  	'</div>' +
 				  '</div>';
 		console.log("HTML: ", html);
+		console.log("What is going on here? ", profile.data.data.length);
 		if (profile.data.data.length !== 0) {
     	res.send({html: html});			
 		} else {
-			res.send({html: "<h4>Probably a ghost.</h4>"})
+			let notFound = '<h4>' + goofy + '</h4>';
+    	res.send({html: notFound});
 		}
 		res.end();
 	} // End Mailbox "IF"
