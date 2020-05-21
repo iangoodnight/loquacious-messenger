@@ -289,6 +289,12 @@ router.post('/data', async function(req, res) {
 			client = process.env.F220_X_CLIENT;
 			token = process.env.F220_X_TOKEN;
 			orderPointer = 'F';
+		} else {
+			profile = {
+				data: {
+					data: []
+				}
+			};
 		};
 
 		let profileId = '';
