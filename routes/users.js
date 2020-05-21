@@ -4,9 +4,6 @@ const fetch = require('node-fetch');
 const axios = require('axios');
 
 router.post('/data', async function(req, res) {
-	// Debugging helpscout request
-	// console.log(req.body);
-	// console.log(req);
 	let email = req.body.customer.email;
 	let mailbox = req.body.mailbox.email;
 
@@ -23,15 +20,12 @@ router.post('/data', async function(req, res) {
 					if(v.status === 'fulfilled') {
 	
 						let target = v.value.config.url.split('&_path=')[1].split('&_cnd')[0];
-						// console.log(v.value.data[0]);
 						console.log('target: ', target);
 						switch (target) {
 							case 'profile':
-								// console.log('case: profile');
 								data.profile = v.value.data[0];
 								break;
 							case 'order':
-								// console.log('case: order');
 								data.orders = v.value.data;
 								break;
 							default:
@@ -45,7 +39,7 @@ router.post('/data', async function(req, res) {
 				return results;
 			})
 			.then(results => {
-				// console.log("Results: ", results);
+
 				return results;
 			})
 			.catch(reasons => {
@@ -126,7 +120,7 @@ router.post('/data', async function(req, res) {
 						console.log(error.message);
 					}
 				);
-				// console.log('Returned Data: ', additionalDetails);
+
 				let vendorTranslations = axios.get("https://boutsy.com/admin.php?target=RESTAPI&_key=" + process.env.API_KEY + "&_path=xc-multivendor-vendor/" + additionalDetails.vendor.id);
 				let vendorData = await vendorTranslations
 					.then(data => {
@@ -136,14 +130,11 @@ router.post('/data', async function(req, res) {
 						console.log(error.message);
 					});
 		
-				// console.log("VendorData: ", vendorData);
 				let vendorCategories = await getCategories(additionalDetails);
 				let numberProducts = additionalDetails.products.length;
 				let frontEndCatURL;
 				let shippingWarning = '';
 				let unTrustedWarning = '';
-				// console.log("vendorCategories: ", vendorCategories.cats);
-				// console.log("Vendor Translations: ", vendorData);
 				if (vendorCategories.cats.length !== 0) {
 					frontEndCatURL = '<a href="https://boutsy.com/cart.php?target=category&category_id=' + vendorCategories.cats[0].category_id + '" target="_blank">' + numberProducts + '</a>'		
 				} else {
@@ -201,8 +192,7 @@ router.post('/data', async function(req, res) {
 				helpScoutResponse.html = html;
 		
 				res.send(helpScoutResponse);
-		
-    		// res.send({html: "<h4>Beep-Boop under construction</h4>"})
+
 			}; 
 		} else {
     	res.send({html: "<h4>Probably a ghost.</h4>"})
@@ -216,18 +206,9 @@ router.post('/data', async function(req, res) {
 
 		console.log("Aiming for the BigCommerce API...");
 		let targetUrlBulk = encodeURI('https://api.bigcommerce.com/stores/' + process.env.BULK_STORE_HASH + '/v3/customers?email:in=' + email);
-		let targetUrlFF220 = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v3/customers?email:in=' + email);
+		let targetUrlF220 = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v3/customers?email:in=' + email);
+		console.log("Targets: \n", targetUrlBulk, "\n", targetUrlF220);
 		let targets = 0;
-		console.log("targetURLBulk: ", targetUrlBulk);
-		// let profile = await axios.get(targetUrlBulk, 
-		// 	{
-		// 	headers: {
-		// 		'accept': 'application/json',
-		// 		'content-type': 'application/json',
-		// 		'x-auth-client': process.env.F220_X_CLIENT,
-		// 		'x-auth-token': process.env.F220_X_TOKEN
-		// 	}
-		// });
 		let profile;
 		let profileBulk = await axios.get(targetUrlBulk, 
 			{
@@ -238,7 +219,7 @@ router.post('/data', async function(req, res) {
 				'x-auth-token': process.env.BULK_X_TOKEN
 			}
 		});
-		let profileF22 = await axios.get(targetUrlFF220, 
+		let profileF22 = await axios.get(targetUrlF220, 
 			{
 			headers: {
 				'accept': 'application/json',
@@ -269,15 +250,32 @@ router.post('/data', async function(req, res) {
 				console.log(reasons);
 			}
 		);
-		console.log(responseCollection);
-		responseCollection[0].data.data.length !== 0 ? profile = responseCollection[0] : profile = responseCollection[1];
-		let profileId = '';
-		// console.log("Debug: ", profile.data);
-		// if (profile.data.data.length === 0) {
+		console.log("Response Collection: ", responseCollection);
+		console.log("Checking out conditional: ", responseCollection[0].data.data.length);
+		let pointer;
+		let hash;
+		let client;
+		let token;
 
-		// }
+		if (responseCollection[0].data.data.length !== 0) {
+			profile = responseCollection[0];
+			pointer = '<h4><a href="https://bulkapothecary.com/manage">Bulk Apothecary</a></h4>';
+			hash = process.env.BULK_STORE_HASH;
+			client = process.env.BULK_X_CLIENT;
+			token = process.env.BULK_X_TOKEN;
+		} else {
+			profile = responseCollection[1];
+			pointer = '<h4><a href="https://fashion220.net/manage">Fashion 220</a></h4>';
+			hash = process.env.F220_STORE_HASH;
+			client = process.env.F220_X_CLIENT;
+			token = process.env.F220_X_TOKEN;
+		}
+
+		let profileId = '';
+
 		profile.data.data.length !== 0 ? profileId = profile.data.data[0].id: profileId = '';
-		let ordersUrl = encodeURI('https://api.bigcommerce.com/stores/' + process.env.F220_STORE_HASH + '/v2/orders?customer_id=' + profileId);
+		let ordersUrl = encodeURI('https://api.bigcommerce.com/stores/' + hash + '/v2/orders?customer_id=' + profileId);
+		console.log("Orders Pointer: ", ordersUrl);
 		let orders;
 		if (profileId !== '') {
 			orders = await axios.get(ordersUrl, 
@@ -285,8 +283,8 @@ router.post('/data', async function(req, res) {
 				headers: {
 					'accept': 'application/json',
 					'content-type': 'application/json',
-					'x-auth-client': process.env.F220_X_CLIENT,
-					'x-auth-token': process.env.F220_X_TOKEN
+					'x-auth-client': client,
+					'x-auth-token': token
 				}
 			});
 		} else {
@@ -320,7 +318,7 @@ router.post('/data', async function(req, res) {
 		console.log('Date created: ', dateCreated);
 		console.log('Orders Total: ', ordersTotal);
 
-		let html = '<h4><a href="https://fashion220.net/manage">Fashion 220</a></h4>' +
+		let html = pointer +
 					'<div class="c-sb-section c-sb-section--toggle">' +
 						'<div class="c-sb-section__title js-sb-toggle">' +
 							'Profile <i class="caret sb-caret"></i>' +
