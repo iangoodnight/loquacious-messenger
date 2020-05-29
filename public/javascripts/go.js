@@ -8,7 +8,7 @@ $( document ).ready(function() {
 	});
 
 	function getItGirl() {
-		let email = $("#whodat").val();
+		let email = $("#whodat").val().trim();
 		let mailbox;
 		Number($("#where").val()) === 1 ? mailbox = "sales@boutsy.com": "sales@bulkapothecary.com";
 		console.log(`Email: ${email}\nMailbox: ${mailbox}`);
@@ -32,6 +32,7 @@ $( document ).ready(function() {
 			console.log("Naaaaailed it");
 			console.log(response);
 			$("#target").html(response.html);
+			$("#whodat").val("");
 		})
 		.fail(() => {
 			console.log("lame boy city");
