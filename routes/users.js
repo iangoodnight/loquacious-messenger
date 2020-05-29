@@ -477,6 +477,7 @@ async function getCategories(details) {
 		38: "Stationery",
 		39: "Wellness",
 		42: "Jewelry",
+		276: "Gift",
 		1845: "Coming Soon"
 	};
 	if (categoryArr.length !== 0) {
