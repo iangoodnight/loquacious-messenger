@@ -4,6 +4,7 @@ const fetch = require('node-fetch');
 const axios = require('axios');
 
 router.post('/data', async function(req, res) {
+	console.log(req.body);
 	let email = req.body.customer.email;
 	let mailbox = req.body.mailbox.email;
 	let randomResponse = ['Probably a ghost.', 'I don\'t know this one.','Beats me.','Beep-Boop, computer error.','Their face looks familiar, but I\'m not sure we\'ve met.','Computer took a break to grab a byte to eat','New customer, who dis?','ლ(ಠ益ಠლ)','Hey there, stranger.','Too sleepy to go on.'];
@@ -156,9 +157,16 @@ router.post('/data', async function(req, res) {
 				if (additionalDetails.vendor.isTrustedVendor === false) {
 					unTrustedWarning = '<li class="red">This vendor is untrusted.</li>';				
 				}
-		
+			  let targetUrl = '';
+			  if (additionalDetails.cleanURLs.length > 0) {
+			  	targetUrl = additionalDetails.cleanURLs[0].cleanURL;
+			  }
+			  let cleanCompanyName = 'Boutsy Profile';
+			  if (vendorData.translations.length > 0) {
+			  	cleanCompanyName = vendorData.translations[0].companyName;
+			  }
 				// console.log("Debug: ", additionalDetails.cleanURLs);
-				let html = '<h4><a href="https://boutsy.com/' + additionalDetails.cleanURLs[0].cleanURL + '">Boutsy</a></h4>' +
+				let html = '<h4><a href="https://boutsy.com/' + targetUrl + '">Boutsy</a></h4>' +
 							'<div class="c-sb-section c-sb-section--toggle">' +
 								'<div class="c-sb-section__title js-sb-toggle">' +
 									'Profile <i class="caret sb-caret"></i>' +
@@ -167,7 +175,7 @@ router.post('/data', async function(req, res) {
 									'<ul class="unstyled">' +
 						  			'<li>' +
 						  				'<strong>' +
-							   				'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + vendorData.translations[0].companyName + '</a>' +
+							   				'<a href="https://boutsy.com/admin.php?target=profile&profile_id=' + response[0].profile.profile_id.toString() + '" target="_blank">' + cleanCompanyName + '</a>' +
 							 				'</strong>' +
 						  			'</li>' +
 							  		'<li>' +
